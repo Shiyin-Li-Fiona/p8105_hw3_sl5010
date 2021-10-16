@@ -1,0 +1,96 @@
+---
+title: "p8105_HW3_sl5010"
+author: "Fiona Li"
+date: "10/16/2021"
+output: github_document
+---
+## Problem 1
+
+```{r}
+library(dplyr)
+library(tidyverse)
+library(p8105.datasets)
+data("instacart")
+skimr::skim(instacart)
+```
+
+**size and structure of the data**: Number of rows is 1384617, Number of columns is 15. **key variables**: aisle, product_name, , order_dow, order_hour_of_day.
+
+### How many aisles are there, and which aisles are the most items ordered from?
+
+```{r}
+instacart %>%
+  group_by(aisle) %>%
+  summarise(n_obs = n()) %>%
+  mutate (ranking = min_rank(n_obs))
+```
+Hence, there are 134 aisles, "fresh vegetables" aisle is the most items ordered from, which have 	150609 items.
+
+### Make a plot that shows the number of items ordered in each aisle, limiting this to aisles with more than 10000 items ordered. Arrange aisles sensibly, and organize your plot so others can read it.
+
+```{r}
+instacart %>%
+  group_by(aisle) %>%
+  summarise(n_obs = n()) %>%
+  filter(n_obs > 10000) %>%
+  ggplot(aes(x = n_obs, y = aisle)) + geom_point() +
+  labs(title = " the number of items ordered in each aisle")
+```
+
+### Make a table showing the three most popular items in each of the aisles “baking ingredients”, “dog food care”, and “packaged vegetables fruits”. Include the number of times each item is ordered in your table.
+
+```{r}
+instacart %>%
+  group_by(aisle, product_name) %>%
+  summarise(n_obs = n()) %>%
+  filter(aisle == "baking ingredients"| aisle == "dog food care"| aisle == "packaged vegetables fruits") %>%
+  top_n(1,n_obs) %>%
+  pivot_wider(
+    names_from = "product_name", 
+    values_from = "n_obs"
+  )
+```
+### Make a table showing the mean hour of the day at which Pink Lady Apples and Coffee Ice Cream are ordered on each day of the week; format this table for human readers (i.e. produce a 2 x 7 table).
+
+```{r}
+instacart %>%
+  group_by(product_name, order_dow) %>%
+  summarise(mean_order_hour_of_day = mean(order_hour_of_day)) %>%
+  filter(product_name == "Pink Lady Apples"| product_name == "Coffee Ice Cream") %>%
+  pivot_wider(
+    names_from = "order_dow", 
+    values_from = "mean_order_hour_of_day"
+  )
+```
+
+## Problem 2
+
+```{r}
+library(p8105.datasets)
+data("brfss_smart2010")
+brfss_smart2010
+```
+
+```{r}
+
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
