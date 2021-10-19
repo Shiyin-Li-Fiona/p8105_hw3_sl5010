@@ -79,7 +79,8 @@ janitor::clean_names(brfss_smart2010)
 brfss_smart2010 = 
 brfss_smart2010 %>%
   ## include only responses from “Excellent” to “Poor”
-  filter(Topic == "Overall Health", Response == "Excellent"|Response =="Poor" |Response == "Fair"|Response == "Very good"|Response =="Good")
+  filter(Topic == "Overall Health", Response == "Excellent"|Response =="Poor" |Response == "Fair"|Response == "Very good"|Response =="Good") %>%
+  mutate(Response = factor(Response, levels = c("Poor","Fair","Good","Very good","Excellent")))
 ## organize responses as a factor taking levels ordered from “Poor” to “Excellent”
 brfss_smart2010$Response = as.factor(brfss_smart2010$Response)
 ```
@@ -124,21 +125,62 @@ brfss_smart2010 %>%
 ```{r}
 brfss_smart2010 %>%
   filter(Year == 2006 | Year == 2010, Locationabbr == "NY") %>%
-  select(Year,Response, Data_value) %>%
-  group_by(Response, Year) %>%
+  select(Year,Response, Data_value,Locationdesc) %>%
+  group_by(Response, Year,Locationdesc) %>%
   summarise(avg_data_value = mean(Data_value)) %>%
-  ggplot( aes(x = Response, y = avg_data_value, color = Year)) + geom_point() + facet_grid(. ~ Year) + labs(title = "two-panel plot for the years 2006, and 2010 of distribution of data_value for responses among locations in NY State")
+  ggplot( aes(x = avg_data_value, y = Response, color = Locationdesc)) + geom_point() + facet_grid(. ~ Year) + labs(title = "two-panel plot for the years 2006, and 2010 of distribution of data_value for responses among locations in NY State")
 ```
+## Problem 3
 
+### Load, tidy, and otherwise wrangle the data. Your final dataset should include all originally observed variables and values; have useful variable names; include a weekday vs weekend variable; and encode data with reasonable variable classes. Describe the resulting dataset 
 
 ```{r}
-
+accel_df = read_csv("Data/accel_data.csv") %>%
+mutate(weekdayVSweekend = case_when(
+      day ==  "Friday" ~ "weekday",
+      day ==  "Monday" ~ "weekday",
+      day ==  "Tuesday" ~ "weekday",
+      day ==  "Wednesday" ~ "weekday",
+      day ==  "Thursday" ~ "weekday",
+      day == "Sunday" ~ "weekend",
+      day == "Saturday" ~ "weekend",
+  ))
 ```
 
 ```{r}
-
+accel_df =
+accel_df %>%
+pivot_longer(
+    activity.1:activity.1440,
+    names_to = "min", 
+    values_to = "activity_counts") %>%
+separate(min, into = c("activity", "min"), sep = 9) %>%
+select(-activity, -day_id) %>%
+mutate(min = as.numeric(min))
+skimr::skim(accel_df)
 ```
+**Describe the resulting dataset**: the existing variables are: day, weekdayVSweekend, week, min, activity_counts. The number of observations are 50400
+
+
+### Traditional analyses of accelerometer data focus on the total activity over the day. Using your tidied dataset, aggregate accross minutes to create a total activity variable for each day, and create a table showing these totals. Are any trends apparent?
 
 ```{r}
+total_activity_df =
+accel_df %>%
+  group_by(week,day) %>%
+  summarise(total_activity = sum(activity_counts))
 
+  pivot_wider(
+  total_activity_df,
+  names_from = "day", 
+  values_from = "total_activity")
 ```
+
+### Accelerometer data allows the inspection activity over the course of the day. Make a single-panel plot that shows the 24-hour activity time courses for each day and use color to indicate day of the week. Describe in words any patterns or conclusions you can make based on this graph.
+
+```{r}
+accel_df %>%
+  ggplot(aes(x = min, y = activity_counts, color = day)) + 
+  geom_smooth(se = FALSE) 
+```
+
