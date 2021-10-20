@@ -140,13 +140,13 @@ brfss_smart2010 %>%
 ```{r}
 accel_df = read_csv("Data/accel_data.csv") %>%
 mutate(weekdayVSweekend = case_when(
-      day ==  "Friday" ~ "weekday",
       day ==  "Monday" ~ "weekday",
       day ==  "Tuesday" ~ "weekday",
       day ==  "Wednesday" ~ "weekday",
       day ==  "Thursday" ~ "weekday",
-      day == "Sunday" ~ "weekend",
+      day ==  "Friday" ~ "weekday",
       day == "Saturday" ~ "weekend",
+      day == "Sunday" ~ "weekend",
   ))
 ```
 
@@ -159,7 +159,8 @@ pivot_longer(
     values_to = "activity_counts") %>%
 separate(min, into = c("activity", "min"), sep = 9) %>%
 select(-activity, -day_id) %>%
-mutate(min = as.numeric(min))
+mutate(min = as.numeric(min)) %>%
+mutate(day = factor(day, levels = c("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday")))
 skimr::skim(accel_df)
 ```
 **Describe the resulting dataset**: the existing variables are: day, weekdayVSweekend, week, min, activity_counts. The number of observations are 50400
@@ -179,11 +180,15 @@ accel_df %>%
   values_from = "total_activity")
 ```
 
+**trends:**Most of the total activity count increases from Monday to Saturday. 
+
 ### Accelerometer data allows the inspection activity over the course of the day. Make a single-panel plot that shows the 24-hour activity time courses for each day and use color to indicate day of the week. Describe in words any patterns or conclusions you can make based on this graph.
 
 ```{r}
 accel_df %>%
-  ggplot(aes(x = min, y = activity_counts, color = day)) + 
-  geom_smooth(se = FALSE) 
+  ## convert min to hours
+  mutate(hour = min/60) %>%
+  ggplot(aes(x = hour, y = activity_counts, color = day)) + 
+  geom_smooth(se = FALSE) + labs(title = "the 24-hour activity time courses for each day and use color to indicate day of the week")
 ```
-
+**Describe in words any patterns or conclusions you can make based on this graph: ** The activity increases in the morning around 5 am and decreases at 22 pm. It seems that the activity for sunday noon is more larger than the noon of other days. The the activity for Friday evening is more larger than the evening of other days.
